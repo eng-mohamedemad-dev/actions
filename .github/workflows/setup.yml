@@ -1,0 +1,121 @@
+name: Laravel Server Setup
+
+on:
+  push:
+    branches: [ "setup" ]
+
+jobs:
+  init-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Laravel Server
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # استخراج اسم المشروع من الريبو
+            REPO_NAME="actions"
+            PROJECT_PATH="/var/www/$REPO_NAME"
+
+            # ✅ تحديث النظام
+            sudo apt update && sudo apt upgrade -y
+
+            # ✅ تثبيت PHP + Extensions + MySQL + Composer + Git + Unzip + Nginx + Certbot
+            sudo apt install -y php-cli php-fpm php8.3-fpm php-mbstring unzip curl git \
+              php-xml php-bcmath php-mysql mysql-server composer nginx certbot python3-certbot-nginx
+
+            # ✅ إنشاء قاعدة البيانات + يوزر
+            sudo mysql -e "CREATE DATABASE IF NOT EXISTS ${{ secrets.DB_DATABASE }} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            sudo mysql -e "CREATE USER IF NOT EXISTS '${{ secrets.DB_USERNAME }}'@'localhost' IDENTIFIED BY '${{ secrets.DB_PASSWORD }}';"
+            sudo mysql -e "GRANT ALL PRIVILEGES ON ${{ secrets.DB_DATABASE }}.* TO '${{ secrets.DB_USERNAME }}'@'localhost';"
+            sudo mysql -e "FLUSH PRIVILEGES;"
+
+            # ✅ تجهيز مجلد المشروع في المسار الديناميكي
+            sudo mkdir -p $PROJECT_PATH
+            sudo chown -R $USER:www-data $PROJECT_PATH
+
+            # ✅ سحب المشروع من GitHub
+            sudo git clone -b main https://github.com/eng-mohamedemad-dev/$REPO_NAME.git $PROJECT_PATH || (cd $PROJECT_PATH && sudo git pull)
+
+            cd $PROJECT_PATH
+
+            # ✅ إنشاء ملف .env من GitHub Secrets
+            sudo tee .env > /dev/null <<EOT
+            APP_NAME=Laravel
+            APP_ENV=production
+            APP_KEY=
+            APP_DEBUG=false
+            APP_URL=https://${{ secrets.DOMAIN }}
+
+            LOG_CHANNEL=stack
+            LOG_DEPRECATIONS_CHANNEL=null
+            LOG_LEVEL=debug
+
+            DB_CONNECTION=mysql
+            DB_HOST=127.0.0.1
+            DB_PORT=3306
+            DB_DATABASE=${{ secrets.DB_DATABASE }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+            CACHE_DRIVER=file
+            QUEUE_CONNECTION=sync
+            SESSION_DRIVER=file
+            SESSION_LIFETIME=120
+            EOT
+
+            # ✅ Laravel setup
+            sudo composer install --no-interaction --prefer-dist --optimize-autoloader
+            
+            # توليد APP_KEY
+            sudo php artisan key:generate
+
+            # عمل الميجريشن
+            sudo php artisan migrate --force
+
+            # باقي أوامر Laravel
+            sudo php artisan storage:link
+            sudo php artisan optimize:clear
+
+            # ✅ صلاحيات الملفات
+            sudo chown -R www-data:www-data $PROJECT_PATH
+            sudo chmod -R 775 $PROJECT_PATH/storage $PROJECT_PATH/bootstrap/cache
+
+            # ✅ إعداد ملف nginx للموقع
+            sudo tee /etc/nginx/sites-available/$REPO_NAME > /dev/null <<EOL
+            server {
+                listen 80;
+                server_name ${{ secrets.DOMAIN }};
+
+                root $PROJECT_PATH/public;
+                index index.php index.html;
+
+                location / {
+                    try_files \$uri \$uri/ /index.php?\$query_string;
+                }
+
+                location ~ \.php$ {
+                    include snippets/fastcgi-php.conf;
+                    fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+                }
+
+                location ~ /\.ht {
+                    deny all;
+                }
+            }
+            EOL
+
+            sudo ln -sf /etc/nginx/sites-available/$REPO_NAME /etc/nginx/sites-enabled/$REPO_NAME
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo systemctl restart php8.3-fpm
+            sudo systemctl restart nginx
+
+            # ✅ إصدار شهادة SSL وربطها مع nginx
+            sudo certbot --nginx -d ${{ secrets.DOMAIN }} --non-interactive --agree-tos -m ${{ secrets.SSL_EMAIL }}
+
+            # ✅ إضافة كرون لتجديد الشهادة تلقائيًا كل 3 شهور
+            (sudo crontab -l 2>/dev/null; echo "0 3 1 */3 * certbot renew --quiet") | sudo crontab -
+
+            echo "🚀 Server setup completed successfully with Nginx and SSL!"
