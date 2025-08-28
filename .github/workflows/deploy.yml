@@ -74,14 +74,6 @@ jobs:
             sudo chmod -R 775 $PROJECT_PATH/storage
             sudo chmod -R 775 $PROJECT_PATH/bootstrap/cache
             
-            # عرض محتوى ملف الروتس للتأكد
-            echo "📂 محتوى ملف الروتس:"
-            cat $PROJECT_PATH/routes/web.php
-            
-            # عرض محتوى صفحة الترحيب للتأكد
-            echo "📄 محتوى صفحة الترحيب:"
-            cat $PROJECT_PATH/resources/views/welcome.blade.php
-            
             # إعادة تحميل الخدمات
             sudo systemctl restart php8.3-fpm
             sudo systemctl reload nginx
