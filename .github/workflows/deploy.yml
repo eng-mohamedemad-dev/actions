@@ -15,38 +15,45 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # استخراج اسم المشروع من الريبو
+            # إعداد متغيرات المشروع
             REPO_NAME="actions"
             PROJECT_PATH="/var/www/$REPO_NAME"
             
-            # الانتقال إلى المسار الديناميكي للمشروع
             cd $PROJECT_PATH
             
-            # تحديث الكود من GitHub
-            sudo git pull origin main
+            # اعتبر المجلد safe لـ Git
+            git config --global --add safe.directory $PROJECT_PATH || true
             
-            # تحديث تبعيات composer
-            sudo composer install --no-interaction --prefer-dist --optimize-autoloader
+            # تحديث الكود من GitHub بدون sudo
+            git fetch origin main
+            git reset --hard origin/main
             
-            # تشغيل أوامر Laravel
-            sudo php artisan migrate --force
-            sudo php artisan optimize:clear
-            sudo php artisan config:cache
-            sudo php artisan route:cache
-            sudo php artisan view:cache
+            # تثبيت التبعيات بدون sudo
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            
+            # حذف الكاش القديم
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            
+            # إنشاء cache جديد
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
             
             # إنشاء رابط Storage إذا لم يكن موجوداً
-            sudo php artisan storage:link || true
+            php artisan storage:link || true
             
             # ضبط صلاحيات الملفات
-            sudo chown -R www-data:www-data $PROJECT_PATH
-            sudo chmod -R 775 $PROJECT_PATH/storage $PROJECT_PATH/bootstrap/cache
+            chown -R www-data:www-data $PROJECT_PATH
+            chmod -R 775 $PROJECT_PATH/storage $PROJECT_PATH/bootstrap/cache
             
             # إعادة تحميل nginx و PHP-FPM
-            sudo systemctl restart php8.3-fpm
-            sudo systemctl reload nginx
+            systemctl restart php8.3-fpm
+            systemctl reload nginx
             
             echo "✅ التطبيق تم تحديثه بنجاح!"
       
       - name: deploy success
-        run: echo "Deploy successful!" && echo "✅ Deploy finished successfully!"
+        run: echo "Deploy successful! ✅"
