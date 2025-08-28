@@ -62,11 +62,7 @@ jobs:
 
                         # ✅ Laravel setup
                         composer install --no-interaction --prefer-dist --optimize-autoloader
-
-                        # نضمن إن Laravel يقرا .env صح
-                        php artisan config:clear
-                        php artisan cache:clear
-
+                        
                         # توليد APP_KEY
                         php artisan key:generate
 
