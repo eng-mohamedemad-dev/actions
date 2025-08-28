@@ -124,6 +124,7 @@ Route::get('test_actions',function() {
     return 'action';
 });
 
-Route::get('test after push in steup and now we will push in deploy',function() {
-    return 'action from test after push in steup and now we will push in deploy';
+Route::get('test',function() {
+    return 'test for success deployment';
 });
+
