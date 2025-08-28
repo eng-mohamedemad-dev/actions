@@ -125,6 +125,6 @@ Route::get('test_actions',function() {
 });
 
 Route::get('test',function() {
-    return 'test for success deployment';
+    return 'test for success deployment فثففثفف';
 });
 
