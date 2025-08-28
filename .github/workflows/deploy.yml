@@ -15,43 +15,57 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # إعداد متغيرات المشروع
+            # استخراج اسم المشروع من الريبو
             REPO_NAME="actions"
             PROJECT_PATH="/var/www/$REPO_NAME"
             
+            # التأكد من أن المجلدات الضرورية موجودة
+            sudo mkdir -p $PROJECT_PATH/storage/framework/cache
+            sudo mkdir -p $PROJECT_PATH/storage/framework/sessions
+            sudo mkdir -p $PROJECT_PATH/storage/framework/views
+            sudo mkdir -p $PROJECT_PATH/storage/logs
+            sudo mkdir -p $PROJECT_PATH/bootstrap/cache
+            
+            # ضبط الصلاحيات الصحيحة للمجلدات الرئيسية
+            sudo chmod -R 775 $PROJECT_PATH/storage
+            sudo chmod -R 775 $PROJECT_PATH/bootstrap/cache
+            
+            # الانتقال إلى المسار الديناميكي للمشروع
             cd $PROJECT_PATH
             
-            # اعتبر المجلد safe لـ Git
-            git config --global --add safe.directory $PROJECT_PATH || true
+            # تكوين Git على المستوى العام (لتجنب الأخطاء)
+            sudo -u www-data git config --global --add safe.directory $PROJECT_PATH || true
             
-            # تحديث الكود من GitHub بدون sudo
-            git fetch origin main
-            git reset --hard origin/main
+            # تحديث الكود من GitHub (باستخدام المستخدم www-data مباشرة)
+            sudo -u www-data git fetch origin main
+            sudo -u www-data git reset --hard origin/main
             
-            # تثبيت التبعيات بدون sudo
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+            # تحديث تبعيات composer
+            sudo -u www-data composer install --no-interaction --prefer-dist --optimize-autoloader
             
-            # حذف الكاش القديم
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan route:clear
-            php artisan view:clear
-            
-            # إنشاء cache جديد
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+            # تشغيل أوامر Laravel
+            sudo -u www-data php artisan optimize:clear
+            sudo -u www-data php artisan config:cache
+            sudo -u www-data php artisan route:cache
+            sudo -u www-data php artisan view:cache
             
             # إنشاء رابط Storage إذا لم يكن موجوداً
-            php artisan storage:link || true
+            sudo -u www-data php artisan storage:link || true
             
-            # ضبط صلاحيات الملفات
-            chown -R www-data:www-data $PROJECT_PATH
-            chmod -R 775 $PROJECT_PATH/storage $PROJECT_PATH/bootstrap/cache
+            # تشغيل الترحيلات
+            sudo -u www-data php artisan migrate --force
+            
+            # إعادة ضبط الصلاحيات للتأكد من أن جميع المجلدات الهامة لها الصلاحيات المناسبة
+            sudo chmod -R 775 $PROJECT_PATH/storage
+            sudo chmod -R 775 $PROJECT_PATH/bootstrap/cache
+            
+            # عرض محتوى ملف الروتس للتأكد من وجود Route::get('test')
+            echo "📂 محتوى ملف الروتس:"
+            sudo cat $PROJECT_PATH/routes/web.php
             
             # إعادة تحميل nginx و PHP-FPM
-            systemctl restart php8.3-fpm
-            systemctl reload nginx
+            sudo systemctl restart php8.3-fpm
+            sudo systemctl reload nginx
             
             echo "✅ التطبيق تم تحديثه بنجاح!"
       
