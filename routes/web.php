@@ -120,3 +120,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('test_actions',function() {
+    return 'action';
+});
+
+Route::get('test',function() {
+    return 'test for success deployment فثففثفف';
+});
+
