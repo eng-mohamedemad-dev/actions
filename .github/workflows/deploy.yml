@@ -8,11 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug Secrets
-        run: |
-          echo "Host: ${{ secrets.VPS_HOST }}"
-          echo "User: ${{ secrets.VPS_USER }}"
-
       - name: Deploy to AWS EC2 via SSH
         uses: appleboy/ssh-action@v0.1.6
         with:
@@ -20,12 +15,38 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/ubuntu/test/action
-            git pull origin main
-            composer install --no-interaction --prefer-dist --optimize-autoloader
-            php artisan migrate --force
-            php artisan optimize:clear
-            php artisan storage:link
-            sudo chown -R ubuntu:www-data storage bootstrap/cache
+            # استخراج اسم المشروع من الريبو
+            REPO_NAME="actions"
+            PROJECT_PATH="/var/www/$REPO_NAME"
+            
+            # الانتقال إلى المسار الديناميكي للمشروع
+            cd $PROJECT_PATH
+            
+            # تحديث الكود من GitHub
+            sudo git pull origin main
+            
+            # تحديث تبعيات composer
+            sudo composer install --no-interaction --prefer-dist --optimize-autoloader
+            
+            # تشغيل أوامر Laravel
+            sudo php artisan migrate --force
+            sudo php artisan optimize:clear
+            sudo php artisan config:cache
+            sudo php artisan route:cache
+            sudo php artisan view:cache
+            
+            # إنشاء رابط Storage إذا لم يكن موجوداً
+            sudo php artisan storage:link || true
+            
+            # ضبط صلاحيات الملفات
+            sudo chown -R www-data:www-data $PROJECT_PATH
+            sudo chmod -R 775 $PROJECT_PATH/storage $PROJECT_PATH/bootstrap/cache
+            
+            # إعادة تحميل nginx و PHP-FPM
+            sudo systemctl restart php8.3-fpm
+            sudo systemctl reload nginx
+            
+            echo "✅ التطبيق تم تحديثه بنجاح!"
+      
       - name: deploy success
         run: echo "Deploy successful!" && echo "✅ Deploy finished successfully!"
