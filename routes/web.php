@@ -121,5 +121,5 @@ Route::get('/', function () {
 });
 
 Route::get('test_actions',function() {
-    return 'action';
+    return 'action from test_actions';
 });

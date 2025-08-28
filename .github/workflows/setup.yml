@@ -29,8 +29,8 @@ jobs:
             sudo mysql -e "FLUSH PRIVILEGES;"
 
             # ✅ تجهيز مجلد المشروع
-            mkdir -p /home/ubuntu/test/actions
-            cd /home/ubuntu/test/actions
+            mkdir -p /home/ubuntu/test/action
+            cd /home/ubuntu/test/action
 
             # ✅ سحب المشروع من GitHub
             git clone -b main https://github.com/eng-mohamedemad-dev/actions.git .
