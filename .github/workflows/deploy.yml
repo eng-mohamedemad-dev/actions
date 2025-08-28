@@ -8,6 +8,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug Secrets
+        run: |
+          echo "Host: ${{ secrets.VPS_HOST }}"
+          echo "User: ${{ secrets.VPS_USER }}"
+
       - name: Deploy to AWS EC2 via SSH
         uses: appleboy/ssh-action@v0.1.6
         with:
