@@ -29,5 +29,5 @@ jobs:
             php artisan view:cache
             php artisan storage:link
             sudo chown -R ubuntu:www-data storage bootstrap/cache
-
-
+      - name: deploy success
+        run: echo "Deploy successful!" && echo "✅ Deploy finished successfully!"
