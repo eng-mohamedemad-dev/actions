@@ -120,6 +120,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('test_actions',function() {
+Route::get('test_actions_for_first_upload',function() {
     return 'action from test_actions';
 });
