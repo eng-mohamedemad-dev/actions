@@ -59,10 +59,6 @@ jobs:
             sudo chmod -R 775 $PROJECT_PATH/storage
             sudo chmod -R 775 $PROJECT_PATH/bootstrap/cache
             
-            # عرض محتوى ملف الروتس للتأكد من وجود Route::get('test')
-            echo "📂 محتوى ملف الروتس:"
-            sudo cat $PROJECT_PATH/routes/web.php
-            
             # إعادة تحميل nginx و PHP-FPM
             sudo systemctl restart php8.3-fpm
             sudo systemctl reload nginx

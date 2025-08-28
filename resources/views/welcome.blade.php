@@ -20,7 +20,7 @@
         @endif
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-      <h1>{{ $name }}</h1>
+      <h1 style="color: blue">{{ $name }}</h1>
       <h2 style="color: red">name</h2>
     </body>
 </html>
