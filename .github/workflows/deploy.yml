@@ -29,9 +29,5 @@ jobs:
             php artisan view:cache
             php artisan storage:link
             sudo chown -R ubuntu:www-data storage bootstrap/cache
-            # اختياري
-            # npm install && npm run build
-            # sudo systemctl restart php8.3-fpm
-            # sudo systemctl restart nginx
 
 
