@@ -117,14 +117,9 @@ Route::get('/scrape', function () {
 });
 
 Route::get('/', function () {
-    return view('welcome');
+    $name = 'Laravel';
+    return view('welcome', compact('name'));
 });
 
-Route::get('test_actions',function() {
-    return 'action';
-});
 
-Route::get('test',function() {
-    return 'test for success deployment فثففثفف';
-});
 
