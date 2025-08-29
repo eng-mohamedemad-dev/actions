@@ -23,5 +23,6 @@
       <h1 style="color: red">{{ $name }}</h1>
       <h2 style="color: red">name</h2>
       <h3 style="background-color: green">welcome after test</h3>
+      <h4 style="color: blue">after make ssh</h4>
     </body>
 </html>
